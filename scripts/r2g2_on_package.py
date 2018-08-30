@@ -124,8 +124,8 @@ input_not_determined = '''
             </when>
         </conditional>
 ''' % dict(
-      INPUT_NOT_DETERMINED_PASS_DICT.items() + 
-      dict(
+      list(INPUT_NOT_DETERMINED_PASS_DICT.items()) +
+      list(dict(
            name = "%(name)s",
            input_dataset = input_dataset,
            input_text = input_text,
@@ -133,7 +133,7 @@ input_not_determined = '''
            input_integer = input_integer,
            input_float = input_float,
            input_select = input_select
-           ).items()
+           ).items())
       )
 INPUT_NOT_DETERMINED_DICT = {}
 for select in ['dataset_selected', 'text_selected', 'integer_selected', 'float_selected', 'boolean_selected', 'skip_selected', 'NULL_selected', 'NA_selected' ]:
@@ -180,11 +180,11 @@ optional_input_select = optional_input % dict(
                                                input_template = input_select
                                                )
 optional_input_not_determined = optional_input % dict( 
-                                                       INPUT_NOT_DETERMINED_PASS_DICT.items() + 
-                                                       dict(
+                                                       list(INPUT_NOT_DETERMINED_PASS_DICT.items()) +
+                                                       list(dict(
                                                             name = "%(name)s",
                                                             input_template = input_not_determined
-                                                  ).items() )
+                                                  ).items()) )
 
 
 ellipsis_input = '''
@@ -192,7 +192,7 @@ ellipsis_input = '''
             <param name="%(name)s_name" type="text" value="" label="Name for argument" help=""/>
             %(input_not_determined)s
         </repeat>
-''' % dict( input_not_determined=input_not_determined, name='argument' ) % dict( INPUT_NOT_DETERMINED_PASS_DICT.items() + dict( name='argument', label='"Argument value"', help='""', value='""'  ).items() )
+''' % dict( input_not_determined=input_not_determined, name='argument' ) % dict( list(INPUT_NOT_DETERMINED_PASS_DICT.items()) + list(dict( name='argument', label='"Argument value"', help='""', value='""'  ).items()) )
 
 def generate_macro_xml():
     macro_xml = '''<macros>
@@ -307,7 +307,7 @@ saveRDS(input_abundance, file = "${output_r_dataset}", ascii = FALSE, version = 
 </tool>''' % dict( package_name=package_name, package_version=package_version, r_name=r_name, galaxy_tool_version=galaxy_tool_version )
     return LOAD_MATRIX_TOOL_XML
 
-SAFE_CHARS = list( x for x in string.letters + string.digits + '_' )
+SAFE_CHARS = list( x for x in string.ascii_letters + string.digits + '_' )
 def simplify_text( text ):
     return ''.join( [ x if x in SAFE_CHARS else '_' for x in text ] )
     
@@ -323,7 +323,7 @@ def to_docstring( page, section_names = None):
     
 
     if section_names is None:
-        section_names = page.sections.keys()
+        section_names = list(page.sections.keys())
         
     def walk( s, tree, depth=0):
         if not isinstance(tree, str):
@@ -409,22 +409,22 @@ except os.error:
     pass
 
 
-with open( os.path.join( args.out, "%s_macros.xml" % ( r_name ) ), 'wb+' ) as out:
+with open( os.path.join( args.out, "%s_macros.xml" % ( r_name ) ), 'w+' ) as out:
     out.write( generate_macro_xml() )
 
 if args.create_load_matrix_tool:
-    with open( os.path.join( args.out, "r_load_matrix.xml" ), 'wb+' ) as out:
+    with open( os.path.join( args.out, "r_load_matrix.xml" ), 'w+' ) as out:
         out.write( generate_LOAD_MATRIX_TOOL_XML() )
 
 for j, name in enumerate( dir( package_importr ) ):
-    print 'Starting',j,name
+    print('Starting',j,name)
     try:
         package_obj = getattr( package_importr, name )
         rname = package_obj.__rname__
         #print "package_obj name", name, package_obj, type( package_obj ), package_obj.typeof, str_typeint( package_obj.typeof )
-        print 'rname', rname
+        print('rname', rname)
         if '.' in rname and False:
-            print "Skipping:", rname
+            print("Skipping:", rname)
             skipped+=1
             continue
         xml_dict = {
@@ -449,12 +449,12 @@ for j, name in enumerate( dir( package_importr ) ):
             for i, help_page in enumerate( help ):
                 xml_dict['help_rst'] = join_char.join( [ xml_dict['help_rst'], to_docstring( help_page ) ] )
                 join_char = "\n\n"
-                if 'title' in help_page.sections.keys() and not xml_dict['description']:
+                if 'title' in list(help_page.sections.keys()) and not xml_dict['description']:
                     xml_dict['description'] = unroll_vector_to_text( help_page.sections[ 'title' ] )#" ".join( map( str, help_page.sections[ 'title' ] ) )
             if i > 1:
-                print rname, "had multiple pages:", i, tuple( help )
+                print(rname, "had multiple pages:", i, tuple( help ))
         except Exception as e:
-            print "Falling back to docstring:", rname, e
+            print("Falling back to docstring:", rname, e)
             xml_dict['help_rst'] = package_obj.__doc__
 
         inputs = []
@@ -522,8 +522,8 @@ for j, name in enumerate( dir( package_importr ) ):
                 length = len( list( value_value ) )
                 input_dict['multiple'] = ( length > 1 )
             except Exception as e:
-                print 'Error getting input param info:'
-                print e
+                print('Error getting input param info:')
+                print(e)
             
             
             
@@ -538,7 +538,7 @@ for j, name in enumerate( dir( package_importr ) ):
             
             #FIXME: change ... into repeat with conditional to allow providing any? type of input, with/without names?
             if formal_name in ['...']:
-                print 'has ... need to replace with a repeat and conditional'
+                print('has ... need to replace with a repeat and conditional')
                 inputs.append( ellipsis_input % input_dict )
                 input_names.append( ( '...', '___ellipsis___', 'ellipsis', False ) )
             else:
@@ -676,15 +676,15 @@ for j, name in enumerate( dir( package_importr ) ):
         
         assert rname not in package_dict, "%s already exists!" % (package_dict)
         package_dict[rname] = xml_dict
-        with open( os.path.join( args.out, "%s.xml" % ( xml_dict['id_underscore'] ) ), 'wb+' ) as out:
+        with open( os.path.join( args.out, "%s.xml" % ( xml_dict['id_underscore'] ) ), 'w+' ) as out:
             out.write( tool_xml % xml_dict )
-        print "Created: %s" % ( os.path.join( args.out, "%s.xml" % ( xml_dict['id_underscore'] ) ) )
+        print("Created: %s" % ( os.path.join( args.out, "%s.xml" % ( xml_dict['id_underscore'] ) ) ))
         
     except Exception as e:
-        print 'uncaught error in %i: %s\n%s' % ( j, name, e )
+        print('uncaught error in %i: %s\n%s' % ( j, name, e ))
         skipped += 1
-    print 'Ending',j,name
+    print('Ending',j,name)
 #print package_dict
-print ''
-print 'created', len(package_dict) + int(args.create_load_matrix_tool), 'tool XMLs'
-print 'skipped', skipped, 'functions'
+print('')
+print('created', len(package_dict) + int(args.create_load_matrix_tool), 'tool XMLs')
+print('skipped', skipped, 'functions')
