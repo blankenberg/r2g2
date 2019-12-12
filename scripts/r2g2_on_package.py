@@ -13,7 +13,9 @@ from rpy2.robjects.functions import DocumentedSTFunction
 from rpy2.robjects.help import pages
 from rpy2.robjects.vectors import BoolVector, IntVector, FloatVector, StrVector, ListVector
 from xml.sax.saxutils import quoteattr
-from rpy2.rinterface import str_typeint
+
+from rpy2.rlike.container import TaggedList
+
 
 package_name = None
 package_version = None
@@ -92,7 +94,7 @@ input_not_determined = '''
                 <option value="dataset" selected="%(dataset_selected)s">Dataset</option>
                 <option value="text" selected="%(text_selected)s">Text</option>
                 <option value="integer" selected="%(integer_selected)s">Integer</option>
-                <option value="float" selected="%(float_selected)s">Integer</option>
+                <option value="float" selected="%(float_selected)s">Float</option>
                 <option value="boolean" selected="%(boolean_selected)s">Boolean</option>
                 <option value="skip" selected="%(skip_selected)s">Skip</option>
                 <option value="NULL" selected="%(NULL_selected)s">NULL</option>
@@ -443,10 +445,10 @@ for j, name in enumerate( dir( package_importr ) ):
         xml_dict['id'] = simplify_text( xml_dict['id'] ) # ToolShed doesn't like e.g. '-'' in ids
         
 
-        help = pages( rname )
+        help_pages = pages( rname )
         try:
             join_char = ""
-            for i, help_page in enumerate( help ):
+            for i, help_page in enumerate( help_pages ):
                 xml_dict['help_rst'] = join_char.join( [ xml_dict['help_rst'], to_docstring( help_page ) ] )
                 join_char = "\n\n"
                 if 'title' in list(help_page.sections.keys()) and not xml_dict['description']:
@@ -460,28 +462,26 @@ for j, name in enumerate( dir( package_importr ) ):
         inputs = []
         input_names = []
         input_file_name = None
-        for i, (formal_name, formal_value ) in enumerate( package_obj.formals().items() ):
-            #print 'formal_name', formal_name, type(formal_name)
-            #print 'formal_value', type(formal_value), formal_value
-            #print 'formal_value typeof, typeof_str', formal_value.typeof, str_typeint( formal_value.typeof )
+        pack_formals = package_obj.formals()
+        for i, (formal_name, formal_value ) in enumerate( TaggedList(pack_formals, tags=pack_formals.names).items() ):
             default_value = ''
             input_type = 'text'
             input_dict = INPUT_NOT_DETERMINED_DICT.copy()
             input_dict.update( {
                           'name': simplify_text( formal_name ),
                            'label': quoteattr( formal_name ),
-                           'help':quoteattr( str( formal_value ).strip() ),
+                           #'help':quoteattr( str( formal_value ).strip() ),
+                           'help':quoteattr( "$" + str( tuple(formal_value.names)[0] ).strip() ),
                            'value': '',
                            'multiple': False,
                           } )
             input_template = optional_input_text
             use_quotes = True
             try:
-                value_name, value_value = list( formal_value.items() )[0]
-                #print 'value_name', value_name, type(value_name)
-                #print 'value_value typeof, typeof_str', value_value.typeof, str_typeint( value_value.typeof ), type(str_typeint( value_value.typeof ))  #use value_value
-                
-                r_type = str_typeint( value_value.typeof )
+                value_value = list(formal_value)[0]
+                r_type = str( value_value.typeof )
+                if r_type.startswith('RTYPES.'):
+                    r_type = r_type[len('RTYPES.'):]
                 if r_type == 'INTSXP':
                     input_type = 'integer'
                     default_value = str( value_value[0] )
@@ -519,14 +519,20 @@ for j, name in enumerate( dir( package_importr ) ):
                     input_template = optional_input_not_determined
                     input_dict[ 'dataset_selected' ] = True
                 
-                length = len( list( value_value ) )
+                try:
+                    length = len(list(value_value))
+                    #print("value_value has length, will be multiple=True")
+                except Exception as e:
+                    length=1
+                    #print('Could not do length on value_value, will be multiple=False')
+                    #print(e)
                 input_dict['multiple'] = ( length > 1 )
             except Exception as e:
                 print('Error getting input param info:')
                 print(e)
-            
-            
-            
+
+            if default_value:
+                input_dict['help'] = quoteattr("default: %s" % default_value)
             if input_type == 'dataset':
                 input_template = optional_input_dataset
             elif input_type == 'boolean':
