@@ -92,7 +92,7 @@ input_not_determined = '''
                 <option value="dataset" selected="%(dataset_selected)s">Dataset</option>
                 <option value="text" selected="%(text_selected)s">Text</option>
                 <option value="integer" selected="%(integer_selected)s">Integer</option>
-                <option value="float" selected="%(float_selected)s">Integer</option>
+                <option value="float" selected="%(float_selected)s">Float</option>
                 <option value="boolean" selected="%(boolean_selected)s">Boolean</option>
                 <option value="skip" selected="%(skip_selected)s">Skip</option>
                 <option value="NULL" selected="%(NULL_selected)s">NULL</option>
