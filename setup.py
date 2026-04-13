@@ -8,6 +8,11 @@ setup(
         "rpy2>=3.6.1",
         "jinja2"
     ],
+    extras_require={
+        "test": [
+            "pytest>=8",
+        ],
+    },
     entry_points={
         'console_scripts': [
             'r2g2-package=r2g2.scripts.r2g2_package:main',

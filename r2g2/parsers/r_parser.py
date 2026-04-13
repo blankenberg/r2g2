@@ -30,10 +30,11 @@ class CustomFakeArg(FakeArg):
     def format_block(self, condition, inner, level):
         """Helper to wrap inner block in a properly indented ##if block."""
         indent = "        " * level
+        command_indent = "\t\t\t\t\t"
         return (
-            f"{indent}{'\t\t\t\t\t'}#if {condition}\n"
-            f"{inner}{'\t\t\t\t\t'}\n"
-            f"{indent}{'\t\t\t\t\t'}#end if\n"
+            f"{indent}{command_indent}#if {condition}\n"
+            f"{inner}{command_indent}\n"
+            f"{indent}{command_indent}#end if\n"
         )
 
     def dict_to_xml_and_command(self, spec, parent=None, subparser_name=None,
@@ -105,8 +106,9 @@ class CustomFakeArg(FakeArg):
                 mut_cond_list.append(mut_cond_command%(self.clean_arg_name(o), f"{inner_lavels}    '${full_name}.{subparser_name}__mut_{group_name}.{self.clean_arg_name(o)}'"))
 
                 when2.append(self.generate_param( o))
-            parent.append(cond2)    
-            cmd_parts.append("    " * level + f"{ "\n    ".join(mut_cond_list)}\n\n")
+            parent.append(cond2)
+            joined_mutual_conditionals = "\n    ".join(mut_cond_list)
+            cmd_parts.append("    " * level + f"{joined_mutual_conditionals}\n\n")
             
         # Normal params
         for opt in spec.get("groups", {}).get("options", []):
